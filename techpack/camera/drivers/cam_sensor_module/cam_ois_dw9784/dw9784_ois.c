@@ -943,8 +943,9 @@ void dw9784_fw_read(void)
 {
 
 	/* Read the data of fw memory using register */
-	unsigned short buf_R[10240];
+	unsigned short *buf_R = kzalloc(10240 * sizeof(unsigned short), GFP_KERNEL);
 	int i = 0;
+	if (!buf_R) return;
 	write_reg_16bit_value_16bit(0xD001, 0x0000); /* dsp mode */
 	os_mdelay(1);
 	dw9784_flash_acess();
@@ -961,6 +962,7 @@ void dw9784_fw_read(void)
 				buf_R[i + 8], buf_R[i + 9], buf_R[i + 10], buf_R[i + 11], buf_R[i + 12], buf_R[i + 13], buf_R[i + 14], buf_R[i + 15] ); 
 	}
 	dw9784_ois_reset();
+	kfree(buf_R);
 }
 
 void dw9784_flash_if_ram_read(void)
