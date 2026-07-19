@@ -50,6 +50,10 @@ CONTINUE=false
 export ARCH=arm64
 export SUBARCH=arm64
 export CC="ccache clang"
+export CCACHE_DIR=~/.cache/ccache
+export CCACHE_COMPILERCHECK=content
+export CCACHE_BASEDIR=$PWD
+export CCACHE_MAXSIZE=5G
 export CROSS_COMPILE="aarch64-linux-gnu-"
 export CROSS_COMPILE_ARM32="arm-linux-gnueabi-"
 export CLANG_TRIPLE="aarch64-linux-gnu-"
@@ -140,3 +144,6 @@ fi
 BUILD_KERNEL &&
 INSTALL_MODULES &&
 echo "Finished building $LOCALVERSION!"
+
+ccache -s
+exit 0
