@@ -1,182 +1,88 @@
-# How do I submit patches to Android Common Kernels
+# NetHunter Kernel for Sony SM6375 Devices (Xperia 10 V, 10 IV, etc.)
 
-1. BEST: Make all of your changes to upstream Linux. If appropriate, backport to the stable releases.
-   These patches will be merged automatically in the corresponding common kernels. If the patch is already
-   in upstream Linux, post a backport of the patch that conforms to the patch requirements below.
+This repository contains a standalone build script and kernel sources optimized for Kali NetHunter on LineageOS (SM6375).
 
-2. LESS GOOD: Develop your patches out-of-tree (from an upstream Linux point-of-view). Unless these are
-   fixing an Android-specific bug, these are very unlikely to be accepted unless they have been
-   coordinated with kernel-team@android.com. If you want to proceed, post a patch that conforms to the
-   patch requirements below.
+## 1. Quick Build (Default: pdx235)
 
-# Common Kernel patch requirements
-
-- All patches must conform to the Linux kernel coding standards and pass `script/checkpatch.pl`
-- Patches shall not break gki_defconfig or allmodconfig builds for arm, arm64, x86, x86_64 architectures
-(see  https://source.android.com/setup/build/building-kernels)
-- If the patch is not merged from an upstream branch, the subject must be tagged with the type of patch:
-`UPSTREAM:`, `BACKPORT:`, `FROMGIT:`, `FROMLIST:`, or `ANDROID:`.
-- All patches must have a `Change-Id:` tag (see https://gerrit-review.googlesource.com/Documentation/user-changeid.html)
-- If an Android bug has been assigned, there must be a `Bug:` tag.
-- All patches must have a `Signed-off-by:` tag by the author and the submitter
-
-Additional requirements are listed below based on patch type
-
-## Requirements for backports from mainline Linux: `UPSTREAM:`, `BACKPORT:`
-
-- If the patch is a cherry-pick from Linux mainline with no changes at all
-    - tag the patch subject with `UPSTREAM:`.
-    - add upstream commit information with a `(cherry-picked from ...)` line
-    - Example:
-        - if the upstream commit message is
+To build the NetHunter kernel for the Xperia 10 V (pdx235), simply run:
+```bash
+./build.sh
 ```
-        important patch from upstream
+This will compile the kernel using the pre-configured `nethunter_pdx235_defconfig` and output the compiled `Image` in `build/arch/arm64/boot/Image`.
 
-        This is the detailed description of the important patch
+## 2. Building for Other SM6375 Devices (pdx225, pdx235_j)
 
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
-```
-        - then Joe Smith would upload the patch for the common kernel as
-```
-        UPSTREAM: important patch from upstream
+If you need to build for another device variant, you must first generate its NetHunter defconfig.
 
-        This is the detailed description of the important patch
-
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
-
-        Bug: 135791357
-        Change-Id: I4caaaa566ea080fa148c5e768bb1a0b6f7201c01
-        (cherry-picked from c31e73121f4c1ec41143423ac6ce3ce6dafdcec1)
-        Signed-off-by: Joe Smith <joe.smith@foo.org>
+### Step 2.1: Generate the base config
+Run the following command, replacing `<DEVICE>` with your device codename (e.g., `pdx225` or `pdx235_j`):
+```bash
+make O=out ARCH=arm64 gki_defconfig vendor/holi-qgki_defconfig diffconfig/common.config diffconfig/<DEVICE>.config
+mv out/.config arch/arm64/configs/nethunter_<DEVICE>_defconfig
 ```
 
-- If the patch requires any changes from the upstream version, tag the patch with `BACKPORT:`
-instead of `UPSTREAM:`.
-    - use the same tags as `UPSTREAM:`
-    - add comments about the changes under the `(cherry-picked from ...)` line
-    - Example:
+### Step 2.2: Compile
+Run the build script specifying your device:
+```bash
+./build.sh nethunter <DEVICE>
 ```
-        BACKPORT: important patch from upstream
+*Example:* `./build.sh nethunter pdx225`
 
-        This is the detailed description of the important patch
+> **Dependencies:** For build environment requirements, refer to the [LineageOS Build Guide](https://wiki.lineageos.org/devices/pdx235/build/).
 
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
+---
 
-        Bug: 135791357
-        Change-Id: I4caaaa566ea080fa148c5e768bb1a0b6f7201c01
-        (cherry-picked from c31e73121f4c1ec41143423ac6ce3ce6dafdcec1)
-        [ Resolved minor conflict in drivers/foo/bar.c ]
-        Signed-off-by: Joe Smith <joe.smith@foo.org>
-```
+## 3. Packaging the NetHunter Kernel Installer ZIP
 
-## Requirements for other backports: `FROMGIT:`, `FROMLIST:`,
+Once your kernel is built, you can package it into a flashable ZIP using the official NetHunter tools.
 
-- If the patch has been merged into an upstream maintainer tree, but has not yet
-been merged into Linux mainline
-    - tag the patch subject with `FROMGIT:`
-    - add info on where the patch came from as `(cherry picked from commit <sha1> <repo> <branch>)`. This
-must be a stable maintainer branch (not rebased, so don't use `linux-next` for example).
-    - if changes were required, use `BACKPORT: FROMGIT:`
-    - Example:
-        - if the commit message in the maintainer tree is
-```
-        important patch from upstream
+### Step 3.1: Download Installer Tools
+```bash
+git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-installer.git
+cd kali-nethunter-installer/
 
-        This is the detailed description of the important patch
-
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
-```
-        - then Joe Smith would upload the patch for the common kernel as
-```
-        FROMGIT: important patch from upstream
-
-        This is the detailed description of the important patch
-
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
-
-        Bug: 135791357
-        (cherry picked from commit 878a2fd9de10b03d11d2f622250285c7e63deace
-         https://git.kernel.org/pub/scm/linux/kernel/git/foo/bar.git test-branch)
-        Change-Id: I4caaaa566ea080fa148c5e768bb1a0b6f7201c01
-        Signed-off-by: Joe Smith <joe.smith@foo.org>
+git clone --depth 1 --branch main --filter=blob:limit=2m --no-checkout https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernels.git kernels
+cd kali-nethunter-kernels
+git sparse-checkout set bin example_scripts patches sixteen/oneplus7-los-23.2
+cd ..
 ```
 
-
-- If the patch has been submitted to LKML, but not accepted into any maintainer tree
-    - tag the patch subject with `FROMLIST:`
-    - add a `Link:` tag with a link to the submittal on lore.kernel.org
-    - if changes were required, use `BACKPORT: FROMLIST:`
-    - Example:
+### Step 3.2: Inject the Kernel
+Place your compiled `Image` into the appropriate device folder. (Replace `pdx235` with your device if necessary):
+```bash
+mkdir -p kernels/sixteen/pdx235-los
+cp ../android_kernel_sony_sm6375/build/arch/arm64/boot/Image kernels/sixteen/pdx235-los/
 ```
-        FROMLIST: important patch from upstream
+*(Note: Do not include the `modules` folder. The kernel is patched with a "vermagic bypass" and will automatically load the stock LineageOS modules).*
 
-        This is the detailed description of the important patch
-
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
-
-        Bug: 135791357
-        Link: https://lore.kernel.org/lkml/20190619171517.GA17557@someone.com/
-        Change-Id: I4caaaa566ea080fa148c5e768bb1a0b6f7201c01
-        Signed-off-by: Joe Smith <joe.smith@foo.org>
+### Step 3.3: Generate the ZIP
+```bash
+python3 build.py -k pdx235-los --sixteen -fs full
 ```
+Your flashable `kernel-nethunter-*.zip` will be generated in the root directory!
 
-## Requirements for Android-specific patches: `ANDROID:`
+---
 
-- If the patch is fixing a bug to Android-specific code
-    - tag the patch subject with `ANDROID:`
-    - add a `Fixes:` tag that cites the patch with the bug
-    - Example:
-```
-        ANDROID: fix android-specific bug in foobar.c
+## 4. Installation Instructions
 
-        This is the detailed description of the important fix
+1. **Install LineageOS**: Follow the official [LineageOS Installation Wiki for pdx235](https://wiki.lineageos.org/devices/pdx235/install/).
+   - *Optional but recommended:* At Step 4 of the wiki, when flashing `vbmeta`, it is good practice to disable AVB verification to prevent bootloops with custom kernels:
+     `fastboot --disable-verity --disable-verification flash vbmeta vbmeta.img`
+2. **Install Magisk**: At Step 8 of the LineageOS wiki (sideloading add-ons), sideload the [Magisk APK](https://github.com/topjohnwu/Magisk/releases/).
+3. **Download or Build NetHunter Kernel**: 
+   - Compile it yourself using the steps above, OR
+   - Download the pre-compiled release from [Tom60chat's Releases](https://github.com/Tom60chat/android_kernel_sony_sm6375/releases).
+4. **Initial Setup**: Boot your phone and complete the Android setup wizard (OOBE).
+5. **Configure Magisk**: Open the Magisk app. It will ask to do an additional setup and reboot. Let it do so. (Two time)
+6. **Flash the Kernel**: Once rebooted, open Magisk again, go to the **Modules** tab, and flash your `kernel-nethunter-*.zip`.
+7. **Reboot & Enjoy**: Reboot your device. You should be greeted by the Kali NetHunter boot animation!
 
-        Fixes: 1234abcd2468 ("foobar: add cool feature")
-        Change-Id: I4caaaa566ea080fa148c5e768bb1a0b6f7201c01
-        Signed-off-by: Joe Smith <joe.smith@foo.org>
-```
+---
 
-- If the patch is a new feature
-    - tag the patch subject with `ANDROID:`
-    - add a `Bug:` tag with the Android bug (required for android-specific features)
+## 5. Important Notes & Known Issues
 
-# Vibrator driver for HHG device
-## How to merge the driver into kernel source tree
-
- 1. Copy \${this_project}/drivers/hid/hid-aksys.c into \${your_kernel_root}/drivers/hid/
-
- 2. Compare and merge \${this_project}/drivers/hid/hid-ids.h into \${your_kernel_root}/drivers/hid/hid-ids.h :
- Add the following code before the last line of this file
-
-    ```c
-		#define USB_VENDER_ID_QUALCOMM  0x0a12
-		#define USB_VENDER_ID_TEMP_HHG_AKSY 0x1234
-		#define USB_PRODUCT_ID_AKSYS_HHG  0x1000
-    ```
-
- 3. Merge \${this_project}/drivers/hid/Kconfig into \${your_kernel_root}/drivers/hid/Kconfig :
-Add the following code before the last line of this file
-
-		config HID_AKSYS_QRD
-    		tristate "AKSys gamepad USB adapter support"
-    		depends on HID
-    		---help---
-    		Support for AKSys gamepad USB adapter
-
-    	config AKSYS_QRD_FF
-    		bool "AKSys gamepad USB adapter force feedback support"
-    		depends on HID_AKSYS_QRD
-    		select INPUT_FF_MEMLESS
-    		---help---
-    		Say Y here if you have a AKSys gamepad USB adapter and want to
-    		enable force feedback support for it.
-    		
- 4. Merge \${this_project}/drivers/hid/Makefile into \${your_kernel_root}/drivers/hid/Makefile :
- Add the following code at the end of this file
-
-		obj-$(CONFIG_HID_AKSYS_QRD)	+= hid-aksys.o
-		
- 5. Modify your kernel's default build configuration file. Add the following two lines:
-
-        CONFIG_HID_AKSYS_QRD=m
-        CONFIG_AKSYS_QRD_FF=y
+### ⚠️ OTA Updates & Recovery
+On modern A/B devices like the Xperia 10 V, the recovery is integrated directly into the `boot.img` partition.
+- **Flashing this custom kernel will overwrite your recovery partition.**
+- As a result, **OTA (Over-The-Air) updates will not be possible** while the NetHunter kernel is installed.
+- **To restore OTA functionality or recovery:** You must re-flash the original LineageOS `boot.img` via fastboot, which will, in turn, remove the NetHunter kernel. You can also use `fastboot boot boot.img` to temporarily boot the LineageOS recovery without installing it.

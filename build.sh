@@ -27,8 +27,8 @@ DEFAULT_TARGET=nethunter
 RELEASE_VERSION=1.0
 
 # directory containing cross-compile arm64 toolchain (change this!)
-TD="$(pwd)/kali-nethunter-kernel-builder/toolchains"
-export CLANG_ROOT="${TD}/neutron-clang"
+TD="$(pwd)/toolchains"
+export CLANG_ROOT="${TD}/android_prebuilts_clang_kernel_linux-x86_clang-r416183b"
 export CLANG_PATH="${CLANG_ROOT}/bin"
 export PATH="${CLANG_PATH}:${PATH}"
 
@@ -60,8 +60,12 @@ export LLVM_IAS=1
 export KCFLAGS="-Wno-error"
 export MAKE_ARGS="LLVM=1 LLVM_IAS=1"
 
-[ -x "${CLANG_PATH}/clang" ] ||
-ABORT "Unable to find clang at location: ${CLANG_PATH}/clang (Did you run d.sh previously to download it?)"
+if [ ! -x "${CLANG_PATH}/clang" ]; then
+	echo "Clang not found at ${CLANG_PATH}/clang. Cloning LineageOS clang-r416183b..."
+	mkdir -p "${TD}"
+	git clone --depth=1 https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b "${CLANG_ROOT}" || \
+	ABORT "Failed to clone clang!"
+fi
 
 while [ $# != 0 ]; do
 	if [ "$1" = "--continue" ] || [ "$1" == "-c" ]; then
@@ -80,12 +84,9 @@ done
 
 [ "$DEVICE" ] || DEVICE=$DEFAULT_DEVICE
 [ "$TARGET" ] || TARGET=$DEFAULT_TARGET
-DEFCONFIG=${TARGET}_${DEVICE}_defconfig
+DEFCONFIG="vendor/holi-qgki_defconfig diffconfig/common.config diffconfig/${DEVICE}.config nethunter.config"
 
-[ -f "$RDIR/arch/$ARCH/configs/${DEFCONFIG}" ] ||
-ABORT "Config $DEFCONFIG not found in $ARCH configs!"
-
-export LOCALVERSION=$TARGET-$DEVICE-$RELEASE_VERSION
+#export LOCALVERSION=$TARGET-$DEVICE-$RELEASE_VERSION # Changing kernal name make device bootloop
 
 CLEAN_BUILD() {
 	echo "Cleaning build..."
@@ -95,7 +96,7 @@ CLEAN_BUILD() {
 SETUP_BUILD() {
 	echo "Creating kernel config for $LOCALVERSION..."
 	mkdir -p build
-	make -C "$RDIR" O=build CC="$CC" $MAKE_ARGS "$DEFCONFIG" \
+	make -C "$RDIR" O=build CC="$CC" $MAKE_ARGS $DEFCONFIG \
 		|| ABORT "Failed to set up build"
 }
 

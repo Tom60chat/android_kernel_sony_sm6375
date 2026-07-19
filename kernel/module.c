@@ -598,7 +598,7 @@ static const struct kernel_symbol *find_symbol(const char *name,
 	struct find_symbol_arg fsa;
 
 	fsa.name = name;
-	fsa.gplok = gplok;
+	fsa.gplok = true;
 	fsa.warn = warn;
 
 	if (each_symbol_section(find_exported_symbol_in_section, &fsa)) {
@@ -1349,7 +1349,7 @@ static inline int check_modstruct_version(const struct load_info *info,
 static inline int same_magic(const char *amagic, const char *bmagic,
 			     bool has_crcs)
 {
-	return strcmp(amagic, bmagic) == 0;
+	return 1;
 }
 #endif /* CONFIG_MODVERSIONS */
 

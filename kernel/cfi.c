@@ -303,6 +303,15 @@ void cfi_slowpath_handler(uint64_t id, void *ptr, void *diag)
 		handle_cfi_failure(ptr);
 }
 EXPORT_SYMBOL_GPL(cfi_slowpath_handler);
+
+#ifdef CONFIG_CFI_PERMISSIVE
+void __cfi_slowpath(uint64_t id, void *ptr)
+{
+	cfi_slowpath_handler(id, ptr, NULL);
+}
+EXPORT_SYMBOL_GPL(__cfi_slowpath);
+#endif
+
 #endif /* CONFIG_MODULES */
 
 void cfi_failure_handler(void *data, void *ptr, void *vtable)
