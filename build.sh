@@ -28,7 +28,7 @@ RELEASE_VERSION=1.0
 
 # directory containing cross-compile arm64 toolchain (change this!)
 TD="$(pwd)/toolchains"
-export CLANG_ROOT="${TD}/android_prebuilts_clang_kernel_linux-x86_clang-r416183b"
+export CLANG_ROOT="${TD}/clang-r563880c"
 export CLANG_PATH="${CLANG_ROOT}/bin"
 export PATH="${CLANG_PATH}:${PATH}"
 
@@ -61,10 +61,10 @@ export KCFLAGS="-Wno-error"
 export MAKE_ARGS="LLVM=1 LLVM_IAS=1"
 
 if [ ! -x "${CLANG_PATH}/clang" ]; then
-	echo "Clang not found at ${CLANG_PATH}/clang. Cloning LineageOS clang-r416183b..."
-	mkdir -p "${TD}"
-	git clone --depth=1 https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b "${CLANG_ROOT}" || \
-	ABORT "Failed to clone clang!"
+	echo "Clang not found at ${CLANG_PATH}/clang. Downloading clang-r563880c..."
+	mkdir -p "${CLANG_ROOT}"
+	curl -fsSL "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/b5f16aee7b8af4c339972027e91e7e793c2e55d9/clang-r563880c.tar.gz" | tar -C "${CLANG_ROOT}" -xzm || \
+	ABORT "Failed to download and extract clang!"
 fi
 
 while [ $# != 0 ]; do
@@ -87,6 +87,7 @@ done
 DEFCONFIG="vendor/holi-qgki_defconfig diffconfig/common.config diffconfig/${DEVICE}.config nethunter.config"
 
 #export LOCALVERSION=$TARGET-$DEVICE-$RELEASE_VERSION # Changing kernal name make device bootloop
+export LOCALVERSION="" # Prevents the kernel from automatically appending a '+' to the version
 
 CLEAN_BUILD() {
 	echo "Cleaning build..."

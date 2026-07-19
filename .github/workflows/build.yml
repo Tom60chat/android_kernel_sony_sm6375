@@ -29,6 +29,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-ccache-${{ matrix.device }}-
 
+    - name: Cache Clang Toolchain
+      uses: actions/cache@v4
+      with:
+        path: toolchains/clang-r563880c
+        key: ${{ runner.os }}-clang-r563880c
+
     - name: Setup Dependencies
       run: |
         sudo apt-get update
