@@ -180,3 +180,16 @@ Add the following code before the last line of this file
 
         CONFIG_HID_AKSYS_QRD=m
         CONFIG_AKSYS_QRD_FF=y
+
+# NetHunter Wi-Fi Injection Quirk
+**WARNING:** This kernel is **NOT** patched for full packet injection on the internal Wi-Fi adapter (qcacld-3.0). 
+Applying the standard "kimocoder mac80211 injection patch" or similar `qcacld-3.0` modifications will result in an immediate **bootloop** upon module initialization due to firmware/driver mismatches on this specific Snapdragon platform.
+
+**Native Monitor Mode:**
+You can still use native monitor mode for packet sniffing (e.g., `airodump-ng`) without any kernel patches. To enable it, activate `con_mode` on the interface:
+```bash
+ifconfig wlan0 down
+echo "4" > /sys/module/wlan/parameters/con_mode
+ifconfig wlan0 up
+```
+*(For packet injection like deauths, please use an external USB Wi-Fi adapter over OTG).*

@@ -70,10 +70,10 @@ fi
 while [ $# != 0 ]; do
 	if [ "$1" = "--continue" ] || [ "$1" == "-c" ]; then
 		CONTINUE=true
-	elif [ ! "$TARGET" ]; then
-		TARGET=$1
 	elif [ ! "$DEVICE" ]; then
 		DEVICE=$1
+	elif [ ! "$TARGET" ]; then
+		TARGET=$1
 	else
 		echo "Too many arguments!"
 		echo "Usage: ./build.sh [--continue] [device] [target defconfig]"
