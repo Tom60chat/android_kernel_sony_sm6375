@@ -21,6 +21,14 @@ jobs:
       with:
         fetch-depth: 1
 
+    - name: Setup ccache
+      uses: actions/cache@v4
+      with:
+        path: ~/.ccache
+        key: ${{ runner.os }}-ccache-${{ matrix.device }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-ccache-${{ matrix.device }}-
+
     - name: Setup Dependencies
       run: |
         sudo apt-get update
@@ -29,6 +37,27 @@ jobs:
     - name: Build Kernel
       run: |
         ./build.sh ${{ matrix.device }}
+        
+    - name: Clean Build Tree for Upload
+      run: |
+        cd build
+        # Clear out ALL heavy scaffolding and intermediate compiler text files
+        find . \( \
+            -name '*.[ao]' \
+            -o -name '*.mod.o' \
+            -o -name '*.*.symversions' \
+            -o -name '*.dwo' \
+            -o -name '*.su' \
+            -o -name '*.mod' \
+            -o -name '*.lst' \
+            -o -name '*.ll' \
+            -o -name '.*.d' \
+            -o -name '.*.cmd' \
+            -o -name '.*.tmp' \
+        \) -type f -delete
+        
+        # Sweep away any empty folders left behind
+        find . -type d -empty -delete
         
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
